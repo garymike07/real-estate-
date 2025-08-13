@@ -3,7 +3,6 @@ class RealEstateApp {
     constructor() {
         this.cart = JSON.parse(localStorage.getItem("cart")) || [];
         this.favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-        this.user = JSON.parse(localStorage.getItem("user")) || null;
         this.theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
         
         this.init();
@@ -36,11 +35,6 @@ class RealEstateApp {
             cartClose.addEventListener("click", () => this.closeCart());
         }
 
-        // User menu toggle
-        const userMenuToggle = document.querySelector(".user-menu-toggle");
-        if (userMenuToggle) {
-            userMenuToggle.addEventListener("click", () => this.toggleUserMenu());
-        }
 
         // Search functionality
         const searchButton = document.querySelector(".search-bar button");
@@ -216,7 +210,7 @@ class RealEstateApp {
 
     // Property Management
     loadProperties() {
-        // Sample property data - in a real app, this would come from an API
+        // Professional property data with real images
         this.properties = [
             {
                 id: "prop1",
@@ -227,7 +221,7 @@ class RealEstateApp {
                 bathrooms: 4,
                 area: "450m²",
                 description: "Exquisite 5-bedroom villa with swimming pool, manicured gardens, and 24/7 security in prestigious Muthaiga area.",
-                image: "/api/placeholder/400/300",
+                image: "images/villa1.jpg",
                 features: ["Swimming Pool", "Garden", "Security", "Parking"]
             },
             {
@@ -239,7 +233,7 @@ class RealEstateApp {
                 bathrooms: 2,
                 area: "180m²",
                 description: "Contemporary 3-bedroom apartment with city views, gym, and shopping mall access in the heart of Westlands.",
-                image: "/api/placeholder/400/300",
+                image: "images/apartment1.jpg",
                 features: ["City View", "Gym", "Mall Access", "Elevator"]
             },
             {
@@ -251,8 +245,152 @@ class RealEstateApp {
                 bathrooms: 3,
                 area: "380m²",
                 description: "Stunning 4-bedroom beachfront villa with private beach access, infinity pool, and breathtaking ocean views.",
-                image: "/api/placeholder/400/300",
+                image: "images/beach1.jpg",
                 features: ["Beach Access", "Ocean View", "Infinity Pool", "Private"]
+            },
+            {
+                id: "prop4",
+                title: "Executive Townhouse in Karen",
+                location: "Karen, Nairobi",
+                price: "Ksh 45,000,000",
+                bedrooms: 4,
+                bathrooms: 3,
+                area: "320m²",
+                description: "Elegant 4-bedroom townhouse in exclusive Karen neighborhood with modern amenities and spacious compound.",
+                image: "images/townhouse1.jpg",
+                features: ["Gated Community", "Modern Kitchen", "Garden", "Double Garage"]
+            },
+            {
+                id: "prop5",
+                title: "Luxury Penthouse in Kilimani",
+                location: "Kilimani, Nairobi",
+                price: "Ksh 35,000,000",
+                bedrooms: 3,
+                bathrooms: 2,
+                area: "250m²",
+                description: "Sophisticated penthouse with panoramic city views, premium finishes, and exclusive rooftop terrace.",
+                image: "images/apartment2.jpg",
+                features: ["Panoramic Views", "Rooftop Terrace", "Premium Finishes", "Concierge"]
+            },
+            {
+                id: "prop6",
+                title: "Contemporary Villa in Runda",
+                location: "Runda, Nairobi",
+                price: "Ksh 95,000,000",
+                bedrooms: 6,
+                bathrooms: 5,
+                area: "520m²",
+                description: "Magnificent 6-bedroom villa with state-of-the-art architecture, home theater, and wine cellar.",
+                image: "images/villa2.jpg",
+                features: ["Home Theater", "Wine Cellar", "Smart Home", "Staff Quarters"]
+            },
+            {
+                id: "prop7",
+                title: "Oceanfront Resort Villa in Malindi",
+                location: "Malindi, Kilifi",
+                price: "Ksh 150,000,000",
+                bedrooms: 5,
+                bathrooms: 4,
+                area: "480m²",
+                description: "Exclusive oceanfront villa with private beach, tropical gardens, and resort-style amenities.",
+                image: "images/beach2.jpg",
+                features: ["Private Beach", "Tropical Gardens", "Resort Amenities", "Ocean Views"]
+            },
+            {
+                id: "prop8",
+                title: "Modern Apartment in Kileleshwa",
+                location: "Kileleshwa, Nairobi",
+                price: "Ksh 22,000,000",
+                bedrooms: 3,
+                bathrooms: 2,
+                area: "200m²",
+                description: "Stylish 3-bedroom apartment with modern design, balcony views, and premium location access.",
+                image: "images/apartment3.jpg",
+                features: ["Balcony Views", "Modern Design", "Secure Parking", "Backup Generator"]
+            },
+            {
+                id: "prop9",
+                title: "Luxury Beachfront Estate in Watamu",
+                location: "Watamu, Kilifi",
+                price: "Ksh 200,000,000",
+                bedrooms: 7,
+                bathrooms: 6,
+                area: "650m²",
+                description: "Spectacular beachfront estate with multiple pavilions, infinity pool, and direct ocean access.",
+                image: "images/beach3.jpg",
+                features: ["Multiple Pavilions", "Infinity Pool", "Direct Ocean Access", "Staff Accommodation"]
+            },
+            {
+                id: "prop10",
+                title: "Executive Townhouse in Lavington",
+                location: "Lavington, Nairobi",
+                price: "Ksh 38,000,000",
+                bedrooms: 4,
+                bathrooms: 3,
+                area: "280m²",
+                description: "Premium townhouse in sought-after Lavington with contemporary finishes and private garden.",
+                image: "images/townhouse2.jpg",
+                features: ["Contemporary Finishes", "Private Garden", "Study Room", "Servant Quarter"]
+            },
+            {
+                id: "prop11",
+                title: "Architectural Masterpiece in Gigiri",
+                location: "Gigiri, Nairobi",
+                price: "Ksh 180,000,000",
+                bedrooms: 5,
+                bathrooms: 4,
+                area: "600m²",
+                description: "Award-winning architectural design with cutting-edge technology and sustainable features.",
+                image: "images/villa3.jpg",
+                features: ["Award-Winning Design", "Sustainable Features", "Smart Technology", "Art Gallery"]
+            },
+            {
+                id: "prop12",
+                title: "Luxury High-Rise Apartment",
+                location: "Upper Hill, Nairobi",
+                price: "Ksh 28,000,000",
+                bedrooms: 2,
+                bathrooms: 2,
+                area: "160m²",
+                description: "Premium 2-bedroom apartment in iconic high-rise with world-class amenities and city views.",
+                image: "images/apartment4.jpg",
+                features: ["World-Class Amenities", "City Views", "High-Rise Living", "Concierge Service"]
+            },
+            {
+                id: "prop13",
+                title: "Coastal Paradise Villa in Kilifi",
+                location: "Kilifi, Coast",
+                price: "Ksh 110,000,000",
+                bedrooms: 4,
+                bathrooms: 3,
+                area: "420m²",
+                description: "Tranquil coastal villa with traditional Swahili architecture and modern luxury amenities.",
+                image: "images/beach4.jpg",
+                features: ["Swahili Architecture", "Coastal Views", "Traditional Design", "Modern Luxury"]
+            },
+            {
+                id: "prop14",
+                title: "Contemporary Estate in Spring Valley",
+                location: "Spring Valley, Nairobi",
+                price: "Ksh 75,000,000",
+                bedrooms: 5,
+                bathrooms: 4,
+                area: "450m²",
+                description: "Elegant estate home with landscaped gardens, entertainment areas, and premium security.",
+                image: "images/villa4.jpg",
+                features: ["Landscaped Gardens", "Entertainment Areas", "Premium Security", "Guest Wing"]
+            },
+            {
+                id: "prop15",
+                title: "Exclusive Beachfront Retreat",
+                location: "Msambweni, Kwale",
+                price: "Ksh 135,000,000",
+                bedrooms: 6,
+                bathrooms: 5,
+                area: "550m²",
+                description: "Private beachfront retreat with multiple living areas, spa facilities, and pristine beach access.",
+                image: "images/beach5.jpg",
+                features: ["Multiple Living Areas", "Spa Facilities", "Pristine Beach", "Private Retreat"]
             }
         ];
     }
@@ -263,6 +401,9 @@ class RealEstateApp {
         propertyCards.forEach((card, index) => {
             const property = this.properties[index];
             if (!property) return;
+
+            // Add animation delay for staggered effect
+            card.style.setProperty('--animation-order', index);
 
             // Add property image
             const imageContainer = card.querySelector(".property-image");
@@ -365,107 +506,10 @@ class RealEstateApp {
         console.log("Search params:", { location, propertyType, priceRange });
     }
 
-    // User Management
-    toggleUserMenu() {
-        // For now, this will trigger a login/logout flow or show user profile
-        if (this.user) {
-            this.showNotification(`Welcome back, ${this.user.name}!`, "success");
-            // In a real app, show user profile modal or dropdown
-        } else {
-            this.showLoginModal();
-        }
-    }
-
-    showLoginModal() {
-        const modal = this.createModal("Login / Sign Up", `
-            <form id="auth-form">
-                <div class="form-group">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" id="email" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" id="password" class="form-input" required>
-                </div>
-                <button type="submit" class="button button-primary" style="width: 100%;">Login</button>
-                <p style="text-align: center; margin-top: 1rem;">Don't have an account? <a href="#" id="signup-link" style="color: var(--primary-color); text-decoration: none;">Sign Up</a></p>
-            </form>
-        `);
-        this.showModal(modal);
-
-        document.getElementById("auth-form").addEventListener("submit", (e) => {
-            e.preventDefault();
-            const email = document.getElementById("email").value;
-            const password = document.getElementById("password").value;
-            this.handleAuth(email, password, "login");
-        });
-
-        document.getElementById("signup-link").addEventListener("click", (e) => {
-            e.preventDefault();
-            this.showSignupModal();
-        });
-    }
-
-    showSignupModal() {
-        const modal = this.createModal("Sign Up", `
-            <form id="signup-form">
-                <div class="form-group">
-                    <label for="signup-name" class="form-label">Name</label>
-                    <input type="text" id="signup-name" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label for="signup-email" class="form-label">Email</label>
-                    <input type="email" id="signup-email" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label for="signup-password" class="form-label">Password</label>
-                    <input type="password" id="signup-password" class="form-input" required>
-                </div>
-                <button type="submit" class="button button-primary" style="width: 100%;">Sign Up</button>
-                <p style="text-align: center; margin-top: 1rem;">Already have an account? <a href="#" id="login-link" style="color: var(--primary-color); text-decoration: none;">Login</a></p>
-            </form>
-        `);
-        this.showModal(modal);
-
-        document.getElementById("signup-form").addEventListener("submit", (e) => {
-            e.preventDefault();
-            const name = document.getElementById("signup-name").value;
-            const email = document.getElementById("signup-email").value;
-            const password = document.getElementById("signup-password").value;
-            this.handleAuth(email, password, "signup", name);
-        });
-
-        document.getElementById("login-link").addEventListener("click", (e) => {
-            e.preventDefault();
-            this.showLoginModal();
-        });
-    }
-
-    handleAuth(email, password, type, name = null) {
-        // This is a mock authentication. In a real app, you'd send this to a backend.
-        if (type === "signup") {
-            this.user = { name, email, id: Date.now() };
-            localStorage.setItem("user", JSON.stringify(this.user));
-            this.showNotification(`Welcome, ${name}! You are now signed up.`, "success");
-        } else if (type === "login") {
-            // Mock login: any email/password works for now
-            this.user = { name: "Test User", email, id: Date.now() }; 
-            localStorage.setItem("user", JSON.stringify(this.user));
-            this.showNotification(`Welcome back, ${email}!`, "success");
-        }
-        this.closeModal();
-    }
-
     // Checkout Process
     proceedToCheckout() {
         if (this.cart.length === 0) {
             this.showNotification("Your cart is empty. Add some properties first!", "error");
-            return;
-        }
-
-        if (!this.user) {
-            this.showNotification("Please login to proceed to checkout.", "error");
-            this.showLoginModal();
             return;
         }
 
@@ -478,6 +522,19 @@ class RealEstateApp {
             <h3>Checkout Summary</h3>
             <p>Total items: ${this.cart.length}</p>
             <p>Total amount: <span style="font-weight: 700; color: var(--primary-color);">Ksh ${totalAmount.toLocaleString()}</span></p>
+            
+            <div class="form-group" style="margin-top: 2rem;">
+                <label for="customer-name" class="form-label">Full Name</label>
+                <input type="text" id="customer-name" class="form-input" placeholder="Enter your full name" required>
+            </div>
+            <div class="form-group">
+                <label for="customer-email" class="form-label">Email Address</label>
+                <input type="email" id="customer-email" class="form-input" placeholder="Enter your email" required>
+            </div>
+            <div class="form-group">
+                <label for="customer-phone" class="form-label">Phone Number</label>
+                <input type="tel" id="customer-phone" class="form-input" placeholder="Enter your phone number" required>
+            </div>
             
             <div class="form-group" style="margin-top: 2rem;">
                 <label for="payment-method" class="form-label">Select Payment Method</label>
@@ -514,7 +571,7 @@ class RealEstateApp {
         switch (method) {
             case "mpesa":
                 html = `
-                    <p>Send money to M-Pesa Paybill: <strong>123456</strong> Account No: <strong>${this.user.id}</strong></p>
+                    <p>Send money to M-Pesa Paybill: <strong>123456</strong> Account No: <strong>KENYAREALTY</strong></p>
                     <div class="form-group">
                         <label for="mpesa-code" class="form-label">M-Pesa Confirmation Code</label>
                         <input type="text" id="mpesa-code" class="form-input" placeholder="Enter M-Pesa code" required>
@@ -550,13 +607,73 @@ class RealEstateApp {
     }
 
     completePurchase() {
-        // In a real application, this would involve sending payment details to a backend
-        this.showNotification("Purchase completed successfully!", "success");
-        this.cart = []; // Clear cart after purchase
+        // Validate customer information
+        const customerName = document.getElementById("customer-name")?.value;
+        const customerEmail = document.getElementById("customer-email")?.value;
+        const customerPhone = document.getElementById("customer-phone")?.value;
+        const paymentMethod = document.getElementById("payment-method")?.value;
+
+        if (!customerName || !customerEmail || !customerPhone) {
+            this.showNotification("Please fill in all customer information fields.", "error");
+            return;
+        }
+
+        // Validate payment method specific fields
+        if (paymentMethod === "mpesa") {
+            const mpesaCode = document.getElementById("mpesa-code")?.value;
+            if (!mpesaCode) {
+                this.showNotification("Please enter M-Pesa confirmation code.", "error");
+                return;
+            }
+        } else if (paymentMethod === "card") {
+            const cardNumber = document.getElementById("card-number")?.value;
+            const expiryDate = document.getElementById("expiry-date")?.value;
+            const cvv = document.getElementById("cvv")?.value;
+            if (!cardNumber || !expiryDate || !cvv) {
+                this.showNotification("Please fill in all card details.", "error");
+                return;
+            }
+        }
+
+        // Calculate total amount
+        const totalAmount = this.cart.reduce((sum, item) => {
+            const price = parseInt(item.price.replace(/[^\d]/g, ""));
+            return sum + price;
+        }, 0);
+
+        // Create order summary
+        const orderSummary = {
+            orderId: `ORD-${Date.now()}`,
+            customer: {
+                name: customerName,
+                email: customerEmail,
+                phone: customerPhone
+            },
+            items: this.cart,
+            totalAmount: totalAmount,
+            paymentMethod: paymentMethod,
+            orderDate: new Date().toISOString(),
+            status: "Confirmed"
+        };
+
+        // Store order in localStorage (in real app, this would go to backend)
+        const orders = JSON.parse(localStorage.getItem("orders")) || [];
+        orders.push(orderSummary);
+        localStorage.setItem("orders", JSON.stringify(orders));
+
+        // Show success message with order details
+        this.showNotification(`Order ${orderSummary.orderId} completed successfully! Total: Ksh ${totalAmount.toLocaleString()}`, "success");
+        
+        // Clear cart after purchase
+        this.cart = [];
         localStorage.setItem("cart", JSON.stringify(this.cart));
         this.updateCartCount();
         this.updateCartDisplay();
         this.closeModal();
+
+        // Send confirmation email (mock)
+        console.log("Order confirmation sent to:", customerEmail);
+        console.log("Order details:", orderSummary);
     }
 
     // Modal Management

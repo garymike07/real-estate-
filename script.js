@@ -3,6 +3,7 @@ class RealEstateApp {
     constructor() {
         this.cart = JSON.parse(localStorage.getItem("cart")) || [];
         this.favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+        this.comparison = JSON.parse(localStorage.getItem("comparison")) || [];
         this.theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
         
         this.init();
@@ -13,7 +14,9 @@ class RealEstateApp {
         this.updateCartCount();
         this.applyTheme();
         this.loadProperties();
-        this.setupPropertyCards();
+        this.renderProperties();
+        this.updateComparisonToolbar();
+        this.renderRecommendations();
     }
 
     setupEventListeners() {
@@ -194,6 +197,7 @@ class RealEstateApp {
         
         localStorage.setItem("favorites", JSON.stringify(this.favorites));
         this.updateFavoriteButtons();
+        this.renderRecommendations();
     }
 
     updateFavoriteButtons() {
@@ -208,7 +212,264 @@ class RealEstateApp {
         });
     }
 
+    // Comparison Management
+    toggleComparison(property) {
+        const index = this.comparison.findIndex(p => p.id === property.id);
+        if (index > -1) {
+            this.removeFromComparison(property.id);
+        } else {
+            this.addToComparison(property);
+        }
+    }
+
+    addToComparison(property) {
+        if (this.comparison.length >= 3) {
+            this.showNotification("You can only compare up to 3 properties.", "error");
+            return;
+        }
+        if (this.comparison.find(item => item.id === property.id)) {
+            this.showNotification("Property already in comparison list.", "error");
+            return;
+        }
+        this.comparison.push(property);
+        localStorage.setItem("comparison", JSON.stringify(this.comparison));
+        this.showNotification("Property added to comparison.", "success");
+        this.updateCompareButtons();
+        this.updateComparisonToolbar();
+    }
+
+    removeFromComparison(propertyId) {
+        this.comparison = this.comparison.filter(item => item.id !== propertyId);
+        localStorage.setItem("comparison", JSON.stringify(this.comparison));
+        this.showNotification("Property removed from comparison.", "success");
+        this.updateCompareButtons();
+        this.updateComparisonToolbar();
+    }
+
+    clearComparison() {
+        this.comparison = [];
+        localStorage.removeItem("comparison");
+        this.updateCompareButtons();
+        this.updateComparisonToolbar();
+    }
+
+    updateCompareButtons() {
+        const compareButtons = document.querySelectorAll(".compare-btn");
+        compareButtons.forEach(btn => {
+            const propertyId = btn.dataset.propertyId;
+            const isCompared = this.comparison.some(p => p.id === propertyId);
+            if (isCompared) {
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+                btn.classList.add("active");
+            } else {
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+                btn.classList.remove("active");
+            }
+        });
+    }
+
+    updateComparisonToolbar() {
+        const toolbar = document.querySelector(".comparison-toolbar");
+        const itemsContainer = document.querySelector(".comparison-items");
+
+        if (!toolbar || !itemsContainer) return;
+
+        if (this.comparison.length > 0) {
+            toolbar.classList.add("show");
+            itemsContainer.innerHTML = this.comparison.map(p => `
+                <div class="comparison-item">
+                    <img src="${p.image}" alt="${p.title}">
+                    <span>${p.title}</span>
+                </div>
+            `).join('');
+        } else {
+            toolbar.classList.remove("show");
+        }
+    }
+
+    showComparisonView() {
+        if (this.comparison.length === 0) {
+            this.showNotification("Add some properties to compare first.", "error");
+            return;
+        }
+
+        let comparisonContent = `
+            <table class="comparison-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">Feature</th>
+                        ${this.comparison.map(p => `<th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">${p.title}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 1rem; font-weight: 600;">Image</td>
+                        ${this.comparison.map(p => `<td style="padding: 1rem;"><img src="${p.image}" style="width: 100%; height: auto; border-radius: 8px;"></td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td style="padding: 1rem; font-weight: 600;">Price</td>
+                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.price}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td style="padding: 1rem; font-weight: 600;">Bedrooms</td>
+                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.bedrooms}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td style="padding: 1rem; font-weight: 600;">Bathrooms</td>
+                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.bathrooms}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td style="padding: 1rem; font-weight: 600;">Area</td>
+                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.area}</td>`).join('')}
+                    </tr>
+                </tbody>
+            </table>
+        `;
+
+        const modal = this.createModal("Compare Properties", comparisonContent, `
+            <button class="button button-secondary" onclick="app.closeModal()">Close</button>
+        `);
+        this.showModal(modal);
+    }
+
+    // Recommendation Engine
+    getRecommendations() {
+        const numberOfRecommendations = 4;
+        let recommendedProperties = [];
+
+        // Filter out properties that are in the cart or favorites
+        const filterOut = [...this.cart, ...this.favorites].map(p => p.id);
+        let availableProperties = this.properties.filter(p => !filterOut.includes(p.id));
+
+        if (this.favorites.length === 0) {
+            // No favorites, show random properties from available
+            recommendedProperties = [...availableProperties].sort(() => 0.5 - Math.random()).slice(0, numberOfRecommendations);
+        } else {
+            const lastFavorite = this.favorites[this.favorites.length - 1];
+            const favoriteLocation = lastFavorite.location.split(',')[1]?.trim();
+            const favoriteType = lastFavorite.title.split(" in ")[0].split(" ").slice(-1)[0];
+
+            let potentialRecommendations = availableProperties.filter(p => {
+                const isInSameLocation = favoriteLocation && p.location.includes(favoriteLocation);
+                const isSameType = p.title.includes(favoriteType);
+                return (isInSameLocation || isSameType) && p.id !== lastFavorite.id;
+            });
+
+            // Shuffle potential recommendations
+            potentialRecommendations.sort(() => 0.5 - Math.random());
+
+            // If not enough recommendations, fill with random available properties
+            if (potentialRecommendations.length < numberOfRecommendations) {
+                const randomProperties = availableProperties.filter(p =>
+                    !potentialRecommendations.some(rec => rec.id === p.id)
+                ).sort(() => 0.5 - Math.random());
+                potentialRecommendations.push(...randomProperties);
+            }
+
+            recommendedProperties = potentialRecommendations.slice(0, numberOfRecommendations);
+        }
+        return recommendedProperties;
+    }
+
+    renderRecommendations() {
+        const recommendations = this.getRecommendations();
+        this.renderProperties(recommendations, "#recommended-property-grid");
+    }
+
     // Property Management
+
+    startVirtualTour(propertyId) {
+        const property = this.properties.find(p => p.id === propertyId);
+        if (!property) return;
+
+        const propertyType = property.title.split(" in ")[0].split(" ").slice(-1)[0];
+        let tourImages = this.properties
+            .filter(p => p.title.includes(propertyType))
+            .map(p => ({ image: p.image, description: p.title }));
+
+        if (tourImages.length === 0) {
+            tourImages.push({ image: property.image, description: property.title });
+        }
+
+        let currentImageIndex = tourImages.findIndex(p => p.image === property.image);
+        if (currentImageIndex === -1) currentImageIndex = 0;
+
+        const tourModalContent = `
+            <div class="virtual-tour-modal">
+                <button class="cart-close" style="position: absolute; top: 2rem; right: 2rem; font-size: 2rem; color: white;" onclick="app.closeModal()">&times;</button>
+                <div class="virtual-tour-image-container">
+                    <img src="${tourImages[currentImageIndex].image}" id="virtual-tour-image" style="max-width: 80vw; max-height: 70vh; object-fit: contain;">
+                    <button class="virtual-tour-nav prev" id="vt-prev" style="position: absolute; top: 50%; left: 1rem; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; font-size: 2rem; padding: 1rem; cursor: pointer;">&lt;</button>
+                    <button class="virtual-tour-nav next" id="vt-next" style="position: absolute; top: 50%; right: 1rem; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; font-size: 2rem; padding: 1rem; cursor: pointer;">&gt;</button>
+                </div>
+                <div id="virtual-tour-caption" style="margin-top: 1rem; font-size: 1.25rem;">${tourImages[currentImageIndex].description}</div>
+            </div>
+        `;
+
+        const modal = this.createModal("", tourModalContent, "");
+        this.showModal(modal);
+
+        const updateTourImage = () => {
+            document.getElementById("virtual-tour-image").src = tourImages[currentImageIndex].image;
+            document.getElementById("virtual-tour-caption").textContent = tourImages[currentImageIndex].description;
+        };
+
+        document.getElementById("vt-prev").addEventListener("click", () => {
+            currentImageIndex = (currentImageIndex - 1 + tourImages.length) % tourImages.length;
+            updateTourImage();
+        });
+
+        document.getElementById("vt-next").addEventListener("click", () => {
+            currentImageIndex = (currentImageIndex + 1) % tourImages.length;
+            updateTourImage();
+        });
+    }
+
+    toggleMortgageCalculator() {
+        const container = document.getElementById("mortgage-calculator-container");
+        if (container) {
+            container.style.display = container.style.display === "none" ? "block" : "none";
+        }
+    }
+
+    calculateMortgage() {
+        const price = parseFloat(document.getElementById("mc-price").value);
+        const downPaymentPercent = parseFloat(document.getElementById("mc-down-payment").value);
+        const interestRate = parseFloat(document.getElementById("mc-interest-rate").value);
+        const loanTermYears = parseFloat(document.getElementById("mc-loan-term").value);
+        const resultDiv = document.getElementById("mc-result");
+
+        if (isNaN(price) || isNaN(downPaymentPercent) || isNaN(interestRate) || isNaN(loanTermYears)) {
+            resultDiv.textContent = "Please enter valid numbers.";
+            resultDiv.style.color = "#ef4444";
+            return;
+        }
+
+        const downPaymentAmount = price * (downPaymentPercent / 100);
+        const principal = price - downPaymentAmount;
+        const monthlyInterestRate = (interestRate / 100) / 12;
+        const numberOfPayments = loanTermYears * 12;
+
+        if (monthlyInterestRate === 0) { // Handle zero interest case
+            const monthlyPayment = principal / numberOfPayments;
+            resultDiv.textContent = `Estimated Monthly Payment: Ksh ${monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            resultDiv.style.color = "var(--primary-color)";
+            return;
+        }
+
+        const numerator = monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments);
+        const denominator = Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1;
+        const monthlyPayment = principal * (numerator / denominator);
+
+        if (isFinite(monthlyPayment)) {
+            resultDiv.textContent = `Estimated Monthly Payment: Ksh ${monthlyPayment.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            resultDiv.style.color = "var(--primary-color)";
+        } else {
+            resultDiv.textContent = "Could not calculate. Please check your inputs.";
+            resultDiv.style.color = "#ef4444";
+        }
+    }
+
     loadProperties() {
         // Professional property data with real images
         this.properties = [
@@ -395,61 +656,70 @@ class RealEstateApp {
         ];
     }
 
-    setupPropertyCards() {
-        const propertyCards = document.querySelectorAll(".property-card");
-        
-        propertyCards.forEach((card, index) => {
-            const property = this.properties[index];
-            if (!property) return;
+    renderProperties(propertiesToRender = this.properties, targetSelector = ".property-grid") {
+        const propertyGrid = document.querySelector(targetSelector);
+        if (!propertyGrid) return;
 
-            // Add animation delay for staggered effect
+        propertyGrid.innerHTML = ""; // Clear existing properties
+
+        propertiesToRender.forEach((property, index) => {
+            const card = document.createElement("div");
+            card.className = "property-card";
             card.style.setProperty('--animation-order', index);
 
-            // Add property image
-            const imageContainer = card.querySelector(".property-image");
-            if (!imageContainer) {
-                const contentDiv = card.querySelector(".property-content");
-                if (contentDiv) {
-                    const imageDiv = document.createElement("div");
-                    imageDiv.className = "property-image";
-                    imageDiv.style.backgroundImage = `url('${property.image}')`;
-                    imageDiv.style.backgroundSize = "cover";
-                    imageDiv.style.backgroundPosition = "center";
-                    card.insertBefore(imageDiv, contentDiv);
-                }
-            }
+            const propertyIndex = this.properties.findIndex(p => p.id === property.id);
 
-            // Add action buttons
-            const actionsContainer = card.querySelector(".property-actions");
-            if (!actionsContainer) {
-                const contentDiv = card.querySelector(".property-content");
-                if (contentDiv) {
-                    const actionsDiv = document.createElement("div");
-                    actionsDiv.className = "property-actions";
-                    actionsDiv.innerHTML = `
-                        <button class="button button-primary" onclick="app.addToCart(app.properties[${index}])">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
-                                <circle cx="9" cy="21" r="1"></circle>
-                                <circle cx="20" cy="21" r="1"></circle>
-                                <path d="m1 1 4 4 2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            card.innerHTML = `
+                <div class="property-image" style="background-image: url('${property.image}'); background-size: cover; background-position: center;">
+                    <span class="badge">For Sale</span>
+                </div>
+                <div class="property-content">
+                    <h3>${property.title}</h3>
+                    <p class="location">${property.location}</p>
+                    <p class="description">${property.description}</p>
+                    <div class="features">
+                        <div class="feature">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10H2V8z"/><path d="M12 4h4"/>
                             </svg>
+                            <span>${property.bedrooms}</span>
+                        </div>
+                        <div class="feature">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 6v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H11a2 2 0 0 0-2 2Z"/><path d="M3 15h6"/><path d="M11 15h2"/><path d="M13 15h2"/><path d="M15 15h2"/>
+                            </svg>
+                            <span>${property.bathrooms}</span>
+                        </div>
+                        <div class="feature">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.4 2.4a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.4-2.4a2.41 2.41 0 0 1 3.4 0Z"/><path d="m7.5 12.5 4.5 4.5"/><path d="m12.5 7.5 4.5 4.5"/><path d="m16.5 3.5 4 4"/>
+                            </svg>
+                            <span>${property.area}</span>
+                        </div>
+                    </div>
+                    <p class="price">${property.price}</p>
+                    <div class="property-actions">
+                        <button class="button button-primary" onclick="app.addToCart(app.properties[${propertyIndex}])">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="m1 1 4 4 2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                             Add to Cart
                         </button>
-                        <button class="button button-secondary favorite-btn" data-property-id="${property.id}" onclick="app.toggleFavorite(app.properties[${index}])">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                            </svg>
+                        <button class="button button-secondary favorite-btn" data-property-id="${property.id}" onclick="app.toggleFavorite(app.properties[${propertyIndex}])">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                         </button>
-                        <button class="button button-secondary" onclick="app.viewPropertyDetails(app.properties[${index}])">
+                        <button class="button button-secondary" onclick="app.viewPropertyDetails(app.properties[${propertyIndex}])">
                             View Details
                         </button>
-                    `;
-                    contentDiv.appendChild(actionsDiv);
-                }
-            }
+                        <button class="button button-secondary compare-btn" data-property-id="${property.id}" onclick="app.toggleComparison(app.properties[${propertyIndex}])">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            propertyGrid.appendChild(card);
         });
 
         this.updateFavoriteButtons();
+        this.updateCompareButtons();
     }
 
     viewPropertyDetails(property) {
@@ -486,7 +756,31 @@ class RealEstateApp {
                     `).join("")}
                 </div>
             </div>
+
+            <div id="mortgage-calculator-container" style="display: none; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <h4 style="margin-bottom: 1rem;">Mortgage Calculator</h4>
+                <div class="form-group">
+                    <label class="form-label">Property Price (Ksh)</label>
+                    <input type="number" id="mc-price" class="form-input" value="${parseInt(property.price.replace(/[^\d]/g, ""))}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Down Payment (%)</label>
+                    <input type="number" id="mc-down-payment" class="form-input" value="20">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Interest Rate (%)</label>
+                    <input type="number" id="mc-interest-rate" class="form-input" value="12.5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Loan Term (Years)</label>
+                    <input type="number" id="mc-loan-term" class="form-input" value="20">
+                </div>
+                <button class="button button-primary" onclick="app.calculateMortgage()">Calculate</button>
+                <div id="mc-result" style="margin-top: 1rem; font-size: 1.25rem; font-weight: 600;"></div>
+            </div>
         `, `
+            <button class="button button-secondary" onclick="app.startVirtualTour('${property.id}')">Virtual Tour</button>
+            <button class="button button-secondary" onclick="app.toggleMortgageCalculator()">Mortgage Calculator</button>
             <button class="button button-secondary" onclick="app.closeModal()">Close</button>
             <button class="button button-primary" onclick="app.addToCart(app.properties.find(p => p.id === '${property.id}')); app.closeModal();">Add to Cart</button>
         `);

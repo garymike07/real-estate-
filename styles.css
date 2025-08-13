@@ -769,13 +769,16 @@ nav a:hover::after {
     background: var(--bg-primary);
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
     z-index: 999;
-    transition: bottom 0.3s ease;
     padding: 1rem 0;
     border-top: 1px solid var(--border-color);
 }
 
 .comparison-toolbar.show {
     bottom: 0;
+}
+
+.hidden {
+    display: none;
 }
 
 .comparison-toolbar .container {
@@ -898,6 +901,7 @@ footer {
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 1;
+    pointer-events: none;
 }
 
 .property-card:hover::before {
@@ -908,14 +912,8 @@ footer {
     display: flex;
     gap: 0.5rem;
     margin-top: 1rem;
-    opacity: 0;
-    transform: translateY(10px);
     transition: all 0.3s ease;
-}
-
-.property-card:hover .property-actions {
-    opacity: 1;
-    transform: translateY(0);
+    z-index: 2;
 }
 
 /* Enhanced Buttons */
@@ -1072,6 +1070,85 @@ nav a:hover::after {
 /* Enhanced Contact Section */
 .contact-grid {
     animation: fadeInUp 0.8s ease 0.4s both;
+}
+
+/* Testimonials Section */
+.testimonials {
+    padding: 4rem 0;
+    background: var(--bg-secondary);
+}
+
+.testimonials h2 {
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.testimonials > p {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 3rem;
+    font-size: 1.125rem;
+}
+
+.testimonial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.testimonial-card {
+    background: var(--bg-primary);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--primary-color);
+}
+
+.testimonial-card p {
+    margin-bottom: 1.5rem;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.testimonial-author img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.testimonial-author h4 {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.testimonial-author span {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    border: 5px solid var(--border-color);
+    border-top: 5px solid var(--primary-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 3rem auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 /* Responsive Enhancements */

@@ -50,6 +50,23 @@ def run(playwright):
 
     # Take a screenshot of the virtual tour
     page.screenshot(path="jules-scratch/verification/verification.png", full_page=True)
+    page.locator(".virtual-tour-modal .cart-close").click()
+
+    # 4. Verify "Book a Viewing" feature
+    page.locator(".property-card .button-secondary:has-text('View Details')").nth(0).click()
+    page.locator(".modal .button-secondary:has-text('Book a Viewing')").click()
+    expect(page.locator(".modal h3:has-text('Book a Viewing')")).to_be_visible()
+    page.locator("#booking-form input[name='name']").fill("Jules Verne")
+    page.locator("#booking-form input[name='email']").fill("jules.verne@example.com")
+    page.locator("#booking-form input[name='date']").fill("2025-12-25")
+    page.locator("#booking-form input[name='time']").fill("10:00")
+    page.locator(".modal button:has-text('Submit Request')").click()
+    expect(page.locator(".notification.success")).to_be_visible()
+    expect(page.locator(".notification.success")).to_contain_text("Your viewing request has been submitted!")
+
+    # 5. Verify Testimonials section
+    expect(page.locator("#testimonials")).to_be_visible()
+    expect(page.locator(".testimonial-card")).to_have_count(3)
 
     browser.close()
 

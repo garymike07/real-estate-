@@ -5,8 +5,6 @@ class RealEstateApp {
         this.favorites = JSON.parse(localStorage.getItem("favorites")) || [];
         this.comparison = JSON.parse(localStorage.getItem("comparison")) || [];
         this.theme = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        
-        this.init();
     }
 
     init() {
@@ -275,6 +273,7 @@ class RealEstateApp {
         if (!toolbar || !itemsContainer) return;
 
         if (this.comparison.length > 0) {
+            toolbar.classList.remove("hidden");
             toolbar.classList.add("show");
             itemsContainer.innerHTML = this.comparison.map(p => `
                 <div class="comparison-item">
@@ -284,6 +283,7 @@ class RealEstateApp {
             `).join('');
         } else {
             toolbar.classList.remove("show");
+            toolbar.classList.add("hidden");
         }
     }
 
@@ -379,6 +379,7 @@ class RealEstateApp {
     // Property Management
 
     startVirtualTour(propertyId) {
+        this.closeModal();
         const property = this.properties.find(p => p.id === propertyId);
         if (!property) return;
 
@@ -660,6 +661,11 @@ class RealEstateApp {
         const propertyGrid = document.querySelector(targetSelector);
         if (!propertyGrid) return;
 
+        const spinner = propertyGrid.querySelector('.loading-spinner');
+        if (spinner) {
+            spinner.style.display = 'none';
+        }
+
         propertyGrid.innerHTML = ""; // Clear existing properties
 
         propertiesToRender.forEach((property, index) => {
@@ -669,52 +675,71 @@ class RealEstateApp {
 
             const propertyIndex = this.properties.findIndex(p => p.id === property.id);
 
-            card.innerHTML = `
-                <div class="property-image" style="background-image: url('${property.image}'); background-size: cover; background-position: center;">
-                    <span class="badge">For Sale</span>
-                </div>
-                <div class="property-content">
-                    <h3>${property.title}</h3>
-                    <p class="location">${property.location}</p>
-                    <p class="description">${property.description}</p>
-                    <div class="features">
-                        <div class="feature">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10H2V8z"/><path d="M12 4h4"/>
-                            </svg>
-                            <span>${property.bedrooms}</span>
-                        </div>
-                        <div class="feature">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M9 6v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H11a2 2 0 0 0-2 2Z"/><path d="M3 15h6"/><path d="M11 15h2"/><path d="M13 15h2"/><path d="M15 15h2"/>
-                            </svg>
-                            <span>${property.bathrooms}</span>
-                        </div>
-                        <div class="feature">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.4 2.4a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.4-2.4a2.41 2.41 0 0 1 3.4 0Z"/><path d="m7.5 12.5 4.5 4.5"/><path d="m12.5 7.5 4.5 4.5"/><path d="m16.5 3.5 4 4"/>
-                            </svg>
-                            <span>${property.area}</span>
-                        </div>
+            const imageDiv = document.createElement('div');
+            imageDiv.className = 'property-image';
+            imageDiv.style.backgroundImage = `url('${property.image}')`;
+            imageDiv.style.backgroundSize = 'cover';
+            imageDiv.style.backgroundPosition = 'center';
+            imageDiv.innerHTML = '<span class="badge">For Sale</span>';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'property-content';
+
+            contentDiv.innerHTML = `
+                <h3>${property.title}</h3>
+                <p class="location">${property.location}</p>
+                <p class="description">${property.description}</p>
+                <div class="features">
+                    <div class="feature">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10H2V8z"/><path d="M12 4h4"/>
+                        </svg>
+                        <span>${property.bedrooms}</span>
                     </div>
-                    <p class="price">${property.price}</p>
-                    <div class="property-actions">
-                        <button class="button button-primary" onclick="app.addToCart(app.properties[${propertyIndex}])">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="m1 1 4 4 2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                            Add to Cart
-                        </button>
-                        <button class="button button-secondary favorite-btn" data-property-id="${property.id}" onclick="app.toggleFavorite(app.properties[${propertyIndex}])">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                        </button>
-                        <button class="button button-secondary" onclick="app.viewPropertyDetails(app.properties[${propertyIndex}])">
-                            View Details
-                        </button>
-                        <button class="button button-secondary compare-btn" data-property-id="${property.id}" onclick="app.toggleComparison(app.properties[${propertyIndex}])">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </button>
+                    <div class="feature">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 6v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H11a2 2 0 0 0-2 2Z"/><path d="M3 15h6"/><path d="M11 15h2"/><path d="M13 15h2"/><path d="M15 15h2"/>
+                        </svg>
+                        <span>${property.bathrooms}</span>
+                    </div>
+                    <div class="feature">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.4 2.4a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.4-2.4a2.41 2.41 0 0 1 3.4 0Z"/><path d="m7.5 12.5 4.5 4.5"/><path d="m12.5 7.5 4.5 4.5"/><path d="m16.5 3.5 4 4"/>
+                        </svg>
+                        <span>${property.area}</span>
                     </div>
                 </div>
+                <p class="price">${property.price}</p>
             `;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'property-actions';
+
+            const addToCartBtn = document.createElement('button');
+            addToCartBtn.className = 'button button-primary';
+            addToCartBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="m1 1 4 4 2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg> Add to Cart';
+            addToCartBtn.addEventListener('click', () => this.addToCart(this.properties[propertyIndex]));
+
+            const favoriteBtn = document.createElement('button');
+            favoriteBtn.className = 'button button-secondary favorite-btn';
+            favoriteBtn.dataset.propertyId = property.id;
+            favoriteBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+            favoriteBtn.addEventListener('click', () => this.toggleFavorite(this.properties[propertyIndex]));
+
+            const viewDetailsBtn = document.createElement('button');
+            viewDetailsBtn.className = 'button button-secondary';
+            viewDetailsBtn.textContent = 'View Details';
+            viewDetailsBtn.addEventListener('click', () => this.viewPropertyDetails(this.properties[propertyIndex]));
+
+            const compareBtn = document.createElement('button');
+            compareBtn.className = 'button button-secondary compare-btn';
+            compareBtn.dataset.propertyId = property.id;
+            compareBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+            compareBtn.addEventListener('click', () => this.toggleComparison(this.properties[propertyIndex]));
+
+            actionsDiv.append(addToCartBtn, favoriteBtn, viewDetailsBtn, compareBtn);
+            contentDiv.appendChild(actionsDiv);
+            card.append(imageDiv, contentDiv);
             propertyGrid.appendChild(card);
         });
 
@@ -779,6 +804,7 @@ class RealEstateApp {
                 <div id="mc-result" style="margin-top: 1rem; font-size: 1.25rem; font-weight: 600;"></div>
             </div>
         `, `
+            <button class="button button-secondary" onclick="app.showBookingForm('${property.id}')">Book a Viewing</button>
             <button class="button button-secondary" onclick="app.startVirtualTour('${property.id}')">Virtual Tour</button>
             <button class="button button-secondary" onclick="app.toggleMortgageCalculator()">Mortgage Calculator</button>
             <button class="button button-secondary" onclick="app.closeModal()">Close</button>
@@ -786,6 +812,58 @@ class RealEstateApp {
         `);
         
         this.showModal(modal);
+    }
+
+    showBookingForm(propertyId) {
+        const property = this.properties.find(p => p.id === propertyId);
+        if (!property) return;
+
+        const bookingModalContent = `
+            <p>You are booking a viewing for:</p>
+            <h4 style="margin: 0.5rem 0 1.5rem;">${property.title}</h4>
+            <form id="booking-form">
+                <div class="form-group">
+                    <label class="form-label">Your Name</label>
+                    <input type="text" class="form-input" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Your Email</label>
+                    <input type="email" class="form-input" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Preferred Date</label>
+                    <input type="date" class="form-input" name="date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Preferred Time</label>
+                    <input type="time" class="form-input" name="time" required>
+                </div>
+            </form>
+        `;
+
+        const bookingModalFooter = `
+            <button class="button button-secondary" onclick="app.closeModal()">Cancel</button>
+            <button class="button button-primary" onclick="app.submitBooking('${property.id}')">Submit Request</button>
+        `;
+
+        const modal = this.createModal("Book a Viewing", bookingModalContent, bookingModalFooter);
+        this.showModal(modal);
+    }
+
+    submitBooking(propertyId) {
+        const form = document.getElementById("booking-form");
+        if (form.checkValidity()) {
+            const formData = new FormData(form);
+            const name = formData.get("name");
+            const email = formData.get("email");
+            const date = formData.get("date");
+            const time = formData.get("time");
+            console.log(`Booking submitted for property ${propertyId} by ${name} (${email}) for ${date} at ${time}`);
+            this.closeModal();
+            this.showNotification("Your viewing request has been submitted!", "success");
+        } else {
+            this.showNotification("Please fill out all fields correctly.", "error");
+        }
     }
 
     // Search Functionality
@@ -1028,11 +1106,9 @@ class RealEstateApp {
     }
 }
 
-const app = new RealEstateApp();
-
+var app;
 // Initialize the app when the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", () => {
+    app = new RealEstateApp();
     app.init();
 });
-
-

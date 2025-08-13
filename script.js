@@ -287,43 +287,85 @@ class RealEstateApp {
         }
     }
 
+    getBestChoice() {
+        if (this.comparison.length === 0) {
+            return null;
+        }
+
+        const scores = this.comparison.map(p => {
+            const price = parseInt(p.price.replace(/[^\d]/g, ""));
+            const area = parseInt(p.area.replace(/[^\d]/g, ""));
+            const bedrooms = p.bedrooms;
+
+            // Lower price is better, so we invert it.
+            const priceScore = 1 / price;
+            // Higher area is better.
+            const areaScore = area;
+            // More bedrooms are better.
+            const bedroomScore = bedrooms;
+
+            // Normalize scores to be between 0 and 1
+            const maxPrice = Math.max(...this.comparison.map(p => parseInt(p.price.replace(/[^\d]/g, ""))));
+            const maxArea = Math.max(...this.comparison.map(p => parseInt(p.area.replace(/[^\d]/g, ""))));
+            const maxBedrooms = Math.max(...this.comparison.map(p => p.bedrooms));
+
+            const normalizedPriceScore = (1 / price) / (1 / maxPrice);
+            const normalizedAreaScore = area / maxArea;
+            const normalizedBedroomScore = bedrooms / maxBedrooms;
+
+            // Combine scores with weights
+            const totalScore = (normalizedPriceScore * 0.5) + (normalizedAreaScore * 0.3) + (normalizedBedroomScore * 0.2);
+
+            return { property: p, score: totalScore };
+        });
+
+        scores.sort((a, b) => b.score - a.score);
+        return scores[0].property;
+    }
+
     showComparisonView() {
         if (this.comparison.length === 0) {
             this.showNotification("Add some properties to compare first.", "error");
             return;
         }
 
+        const bestChoice = this.getBestChoice();
+
         let comparisonContent = `
-            <table class="comparison-table" style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr>
-                        <th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">Feature</th>
-                        ${this.comparison.map(p => `<th style="padding: 1rem; border-bottom: 1px solid var(--border-color);">${p.title}</th>`).join('')}
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="padding: 1rem; font-weight: 600;">Image</td>
-                        ${this.comparison.map(p => `<td style="padding: 1rem;"><img src="${p.image}" style="width: 100%; height: auto; border-radius: 8px;"></td>`).join('')}
-                    </tr>
-                    <tr>
-                        <td style="padding: 1rem; font-weight: 600;">Price</td>
-                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.price}</td>`).join('')}
-                    </tr>
-                    <tr>
-                        <td style="padding: 1rem; font-weight: 600;">Bedrooms</td>
-                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.bedrooms}</td>`).join('')}
-                    </tr>
-                    <tr>
-                        <td style="padding: 1rem; font-weight: 600;">Bathrooms</td>
-                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.bathrooms}</td>`).join('')}
-                    </tr>
-                    <tr>
-                        <td style="padding: 1rem; font-weight: 600;">Area</td>
-                        ${this.comparison.map(p => `<td style="padding: 1rem;">${p.area}</td>`).join('')}
-                    </tr>
-                </tbody>
-            </table>
+            <div class="comparison-view">
+                ${this.comparison.map(p => `
+                    <div class="comparison-property-card ${p.id === bestChoice.id ? 'best-choice' : ''}">
+                        ${p.id === bestChoice.id ? '<div class="best-choice-badge">Jules\' Pick</div>' : ''}
+                        <img src="${p.image}" alt="${p.title}" class="comparison-property-image">
+                        <div class="comparison-property-details">
+                            <h3>${p.title}</h3>
+                            <p class="location">${p.location}</p>
+                            <p class="price">${p.price}</p>
+                            <div class="features">
+                                <div class="feature">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10H2V8z"/><path d="M12 4h4"/>
+                                    </svg>
+                                    <span>${p.bedrooms}</span>
+                                </div>
+                                <div class="feature">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M9 6v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H11a2 2 0 0 0-2 2Z"/><path d="M3 15h6"/><path d="M11 15h2"/><path d="M13 15h2"/><path d="M15 15h2"/>
+                                    </svg>
+                                    <span>${p.bathrooms}</span>
+                                </div>
+                                <div class="feature">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.4 2.4a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.4-2.4a2.41 2.41 0 0 1 3.4 0Z"/><path d="m7.5 12.5 4.5 4.5"/><path d="m12.5 7.5 4.5 4.5"/><path d="m16.5 3.5 4 4"/>
+                                    </svg>
+                                    <span>${p.area}</span>
+                                </div>
+                            </div>
+                            <p class="description">${p.description}</p>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
         `;
 
         const modal = this.createModal("Compare Properties", comparisonContent, `
@@ -734,7 +776,7 @@ class RealEstateApp {
             const compareBtn = document.createElement('button');
             compareBtn.className = 'button button-secondary compare-btn';
             compareBtn.dataset.propertyId = property.id;
-            compareBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+            compareBtn.textContent = 'Compare';
             compareBtn.addEventListener('click', () => this.toggleComparison(this.properties[propertyIndex]));
 
             actionsDiv.append(addToCartBtn, favoriteBtn, viewDetailsBtn, compareBtn);
